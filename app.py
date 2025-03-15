@@ -175,11 +175,9 @@ def receive_fish_data():
         ) 
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
     """, (
-        data['temperature'],
         data['waterLevel'],
         data['ph'],
         data['turbidity'],
-        data['temperatureStatus'],
         data['waterLevelStatus'],
         data['phStatus'],
         data['turbidityStatus']

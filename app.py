@@ -148,11 +148,42 @@ def get_fish_data():
 def receive_fish_data():
     data = request.json
     cursor = conn.cursor()
-    if data['temperature'] is None or data['ph'] is None or data['dissolved_oxygen'] is None or data['turbidity'] is None:
+    if (data.get('temperature') is None or data.get('waterLevel') is None or 
+        data.get('ph') is None or data.get('turbidity') is None or 
+        data.get('temperatureStatus') is None or data.get('waterLevelStatus') is None or 
+        data.get('phStatus') is None or data.get('turbidityStatus') is None):
         return jsonify({"status": "error", "message": "Invalid data format"})
-    # if the table does not exist
-    cursor.execute("CREATE TABLE IF NOT EXISTS fish_data (id SERIAL PRIMARY KEY, temperature FLOAT, ph FLOAT, dissolved_oxygen FLOAT, turbidity FLOAT, created_at TIMESTAMP DEFAULT NOW());")
-    cursor.execute("INSERT INTO fish_data (temperature, ph, dissolved_oxygen, turbidity) VALUES (%s, %s, %s, %s);", (data['temperature'], data['ph'], data['dissolved_oxygen'], data['turbidity']))
+    
+    # if the table does not exist, create it with the specified columns
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS fish_data (
+            id SERIAL PRIMARY KEY, 
+            temperature FLOAT, 
+            waterLevel FLOAT, 
+            ph FLOAT, 
+            turbidity FLOAT, 
+            temperatureStatus VARCHAR(255),
+            waterLevelStatus VARCHAR(255),
+            phStatus VARCHAR(255),
+            turbidityStatus VARCHAR(255),
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+    """)
+    cursor.execute("""
+        INSERT INTO fish_data (
+            temperature, waterLevel, ph, turbidity, temperatureStatus, waterLevelStatus, phStatus, turbidityStatus
+        ) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+    """, (
+        data['temperature'],
+        data['waterLevel'],
+        data['ph'],
+        data['turbidity'],
+        data['temperatureStatus'],
+        data['waterLevelStatus'],
+        data['phStatus'],
+        data['turbidityStatus']
+    ))
     conn.commit()
     cursor.close()
     print(f"Received from ESP32: {data}")

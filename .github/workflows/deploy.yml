@@ -47,21 +47,21 @@ jobs:
             cd ~/anilytics-server
             git pull origin main
             
-            # Create .env file
-            echo "GEMINI_API_KEY=${GEMINI_API_KEY}" > .env
-            echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> .env
-            echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> .env
-            echo "AWS_REGION=${AWS_REGION}" >> .env
-            echo "DYNAMODB_TABLE=${DYNAMODB_TABLE}" >> .env
-            echo "RDS_PSQL_HOST=${RDS_PSQL_HOST}" >> .env
-            echo "RDS_PSQL_USER=${RDS_PSQL_USER}" >> .env
-            echo "RDS_PSQL_PORT=${RDS_PSQL_PORT}" >> .env
-            echo "RDS_PSQL_PASS=${RDS_PSQL_PASS}" >> .env
-            echo "RDS_PSQL_DB=${RDS_PSQL_DB}" >> .env
-            
             # Build new Docker image
             docker build -t anilytics_server .
             
             # Run the new container with the .env file
-            docker run -d -p 80:5000 --env-file .env --name anilytics_server anilytics_server
+            docker run -d -p 80:5000 --name anilytics-server \
+              --env GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+              --env AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+              --env AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+              --env AWS_REGION=${{ secrets.AWS_REGION }} \
+              --env DYNAMODB_TABLE=${{ secrets.DYNAMODB_TABLE }} \
+              --env RDS_PSQL_HOST=${{ secrets.RDS_PSQL_HOST }} \
+              --env RDS_PSQL_USER=${{ secrets.RDS_PSQL_USER }} \
+              --env RDS_PSQL_PORT=${{ secrets.RDS_PSQL_PORT }} \
+              --env RDS_PSQL_PASS=${{ secrets.RDS_PSQL_PASS }} \
+              --env RDS_PSQL_DB=${{ secrets.RDS_PSQL_DB }} \
+              anilytics-server
+
           EOF

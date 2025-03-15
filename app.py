@@ -49,10 +49,26 @@ def get_plant_data():
     try:
         limit = int(request.args.get('limit', 10))
         cursor = conn.cursor()
-        cursor.execute(f"SELECT * FROM plant_data ORDER BY created_at DESC LIMIT {limit};")
-        data = cursor.fetchall()
+        cursor.execute("SELECT id, ph, tds, temperature, humidity, waterTemperature, waterLevel, temperatureStatus, humidityStatus, waterTemperatureStatus, tdsStatus, phStatus, waterLevelStatus, created_at FROM plant_data ORDER BY created_at DESC LIMIT %s;", (limit,))
+        rows = cursor.fetchall()
         cursor.close()
-        return jsonify(data)
+        formatted_data = []
+        for row in rows:
+            formatted_data.append({
+                "ph": row[1],
+                "tds": row[2],
+                "temperature": row[3],
+                "humidity": row[4],
+                "waterTemperature": row[5],
+                "waterLevel": row[6],
+                "temperatureStatus": row[7],
+                "humidityStatus": row[8],
+                "waterTemperatureStatus": row[9],
+                "tdsStatus": row[10],
+                "phStatus": row[11],
+                "waterLevelStatus": row[12]
+            })
+        return jsonify(formatted_data)
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
@@ -137,10 +153,25 @@ def get_fish_data():
     try:
         limit = int(request.args.get('limit', 10))
         cursor = conn.cursor()
-        cursor.execute(f"SELECT * FROM fish_data ORDER BY created_at DESC LIMIT {limit};")
-        data = cursor.fetchall()
+        cursor.execute("""
+            SELECT id, waterLevel, ph, turbidity, waterLevelStatus, phStatus, turbidityStatus, created_at 
+            FROM fish_data 
+            ORDER BY created_at DESC 
+            LIMIT %s;
+        """, (limit,))
+        rows = cursor.fetchall()
         cursor.close()
-        return jsonify(data)
+        formatted_data = []
+        for row in rows:
+            formatted_data.append({
+                "waterLevel": row[1],
+                "ph": row[2],
+                "turbidity": row[3],
+                "waterLevelStatus": row[4],
+                "phStatus": row[5],
+                "turbidityStatus": row[6]
+            })
+        return jsonify(formatted_data)
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
@@ -148,21 +179,18 @@ def get_fish_data():
 def receive_fish_data():
     data = request.json
     cursor = conn.cursor()
-    if (data.get('temperature') is None or data.get('waterLevel') is None or 
+    if (data.get('waterLevel') is None or 
         data.get('ph') is None or data.get('turbidity') is None or 
-        data.get('temperatureStatus') is None or data.get('waterLevelStatus') is None or 
+        data.get('waterLevelStatus') is None or 
         data.get('phStatus') is None or data.get('turbidityStatus') is None):
         return jsonify({"status": "error", "message": "Invalid data format"})
     
-    # if the table does not exist, create it with the specified columns
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS fish_data (
             id SERIAL PRIMARY KEY, 
-            temperature FLOAT, 
             waterLevel FLOAT, 
             ph FLOAT, 
             turbidity FLOAT, 
-            temperatureStatus VARCHAR(255),
             waterLevelStatus VARCHAR(255),
             phStatus VARCHAR(255),
             turbidityStatus VARCHAR(255),
@@ -171,9 +199,9 @@ def receive_fish_data():
     """)
     cursor.execute("""
         INSERT INTO fish_data (
-            temperature, waterLevel, ph, turbidity, temperatureStatus, waterLevelStatus, phStatus, turbidityStatus
+            waterLevel, ph, turbidity, waterLevelStatus, phStatus, turbidityStatus
         ) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        VALUES (%s, %s, %s, %s, %s, %s);
     """, (
         data['waterLevel'],
         data['ph'],
@@ -186,10 +214,17 @@ def receive_fish_data():
     cursor.close()
     print(f"Received from ESP32: {data}")
     
-    # Broadcast to all connected clients
-    socketio.emit('fish_data', data)
-
-    return jsonify({"status": "success", "data": data})
+    fish_data = {
+        "waterLevel": data.get("waterLevel"),
+        "ph": data.get("ph"),
+        "turbidity": data.get("turbidity"),
+        "waterLevelStatus": data.get("waterLevelStatus"),
+        "phStatus": data.get("phStatus"),
+        "turbidityStatus": data.get("turbidityStatus")
+    }
+    
+    socketio.emit('fish_data', fish_data)
+    return jsonify({"status": "success", "data": fish_data})
 
 @socketio.on('connect')
 def handle_connect():

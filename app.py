@@ -55,17 +55,43 @@ def get_plant_data():
         return jsonify(data)
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
-    
 
 @app.route('/plant_data', methods=['POST'])
 def receive_plant_data():
     data = request.json
     cursor = conn.cursor()
-    if data['ph'] is None or data['tds'] is None or data['temperature'] is None or data['humidity'] is None:
+    if (data.get('ph') is None or data.get('tds') is None or 
+        data.get('temperature') is None or data.get('humidity') is None or
+        data.get('waterTemperature') is None or data.get('waterLevel') is None or 
+        data.get('waterLevelCategory') is None):
         return jsonify({"status": "error", "message": "Invalid data format"})
+    
     # if the table does not exist
-    cursor.execute("CREATE TABLE IF NOT EXISTS plant_data (id SERIAL PRIMARY KEY, ph FLOAT, tds FLOAT, temperature FLOAT, humidity FLOAT, created_at TIMESTAMP DEFAULT NOW());")
-    cursor.execute("INSERT INTO plant_data (ph, tds, temperature, humidity) VALUES (%s, %s, %s, %s);", (data['ph'], data['tds'], data['temperature'], data['humidity']))
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS plant_data (
+            id SERIAL PRIMARY KEY, 
+            ph FLOAT, 
+            tds FLOAT, 
+            temperature FLOAT, 
+            humidity FLOAT, 
+            waterTemperature FLOAT, 
+            waterLevel FLOAT, 
+            waterLevelCategory VARCHAR(255), 
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+    """)
+    cursor.execute("""
+        INSERT INTO plant_data (ph, tds, temperature, humidity, waterTemperature, waterLevel, waterLevelCategory) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s);
+    """, (
+        data['ph'], 
+        data['tds'], 
+        data['temperature'], 
+        data['humidity'],
+        data['waterTemperature'],
+        data['waterLevel'],
+        data['waterLevelCategory']
+    ))
     conn.commit()
     cursor.close()
     print(f"Received from ESP32: {data}")

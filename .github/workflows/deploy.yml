@@ -18,13 +18,33 @@ jobs:
 
       - name: Deploy to AWS EC2
         env:
-          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          HOST: ${{ secrets.EC2_HOST }}
-          USER: ubuntu
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DYNAMODB_TABLE: ${{ secrets.DYNAMODB_TABLE }}
+          RDS_PSQL_HOST: ${{ secrets.RDS_PSQL_HOST }}
+          RDS_PSQL_USER: ${{ secrets.RDS_PSQL_USER }}
+          RDS_PSQL_PORT: ${{ secrets.RDS_PSQL_PORT }}
+          RDS_PSQL_PASS: ${{ secrets.RDS_PSQL_PASS }}
+          RDS_PSQL_DB: ${{ secrets.RDS_PSQL_DB }}
         run: |
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           
+          echo "GEMINI_API_KEY=${GEMINI_API_KEY}" > .env
+          echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> .env
+          echo "AWS_REGION=${AWS_REGION}" >> .env
+          echo "DYNAMODB_TABLE=${DYNAMODB_TABLE}" >> .env
+          echo "RDS_PSQL_HOST=${RDS_PSQL_HOST}" >> .env
+          echo "RDS_PSQL_USER=${RDS_PSQL_USER}" >> .env
+          echo "RDS_PSQL_PORT=${RDS_PSQL_PORT}" >> .env
+          echo "RDS_PSQL_PASS=${RDS_PSQL_PASS}" >> .env
+          echo "RDS_PSQL_DB=${RDS_PSQL_DB}" >> .env
+
+          scp -o StrictHostKeyChecking=no -i private_key.pem .env $USER@$HOST:~/anilytics-server/.env
+
           ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << 'EOF'
             set -e  # Exit immediately if a command fails
 

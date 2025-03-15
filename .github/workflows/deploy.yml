@@ -35,7 +35,17 @@ jobs:
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << 'EOF'
+          # Export the environment variables in the remote shell by injecting them in the SSH command.
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST "export GEMINI_API_KEY='$GEMINI_API_KEY' \
+          AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID' \
+          AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY' \
+          AWS_REGION='$AWS_REGION' \
+          DYNAMODB_TABLE='$DYNAMODB_TABLE' \
+          RDS_PSQL_HOST='$RDS_PSQL_HOST' \
+          RDS_PSQL_USER='$RDS_PSQL_USER' \
+          RDS_PSQL_PORT='$RDS_PSQL_PORT' \
+          RDS_PSQL_PASS='$RDS_PSQL_PASS' \
+          RDS_PSQL_DB='$RDS_PSQL_DB'; bash -s" << 'EOF'
             set -e  # Exit immediately if a command fails
 
             # Ensure the repository exists; clone if necessary
@@ -70,7 +80,7 @@ jobs:
             # Build and run the new container
             docker build --pull -t anilytics_server .
             docker run -d -p 80:5000 --restart unless-stopped --env-file .env --name anilytics_server anilytics_server
-          EOF
+EOF
 
           # Cleanup SSH key after deployment
           rm -f private_key.pem

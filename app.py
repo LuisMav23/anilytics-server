@@ -110,11 +110,26 @@ def receive_plant_data():
     conn.commit()
     cursor.close()
     print(f"Received from ESP32: {data}")
+    sensor_data = {
+        "ph": data.get("ph"),
+        "tds": data.get("tds"),
+        "temperature": data.get("temperature"),
+        "humidity": data.get("humidity"),
+        "waterTemperature": data.get("waterTemperature"),
+        "waterLevel": data.get("waterLevel"),
+        "temperatureStatus": data.get("temperatureStatus"),
+        "humidityStatus": data.get("humidityStatus"),
+        "waterTemperatureStatus": data.get("waterTemperatureStatus"),
+        "tdsStatus": data.get("tdsStatus"),
+        "phStatus": data.get("phStatus"),
+        "waterLevelStatus": data.get("waterLevelStatus")
+    }
+    print("Sensor Data:", sensor_data)
     
     # Broadcast to all connected clients
-    socketio.emit('plant_data', data)
+    socketio.emit('plant_data', sensor_data)
 
-    return jsonify({"status": "success", "data": data})
+    return jsonify({"status": "success", "data": sensor_data})
 
 # FISH DATA ENDPOINTS
 @app.route('/fish_data', methods=['GET'])

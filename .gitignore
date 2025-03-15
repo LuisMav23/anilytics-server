@@ -1,0 +1,4 @@
+venv/
+anilytics-server-kp.pem
+.env/
+.env

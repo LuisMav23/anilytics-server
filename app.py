@@ -30,6 +30,7 @@ conn = psycopg2.connect(
     port=os.getenv("RDS_PSQL_PORT") # 5432
 )
 
+
 cursor = conn.cursor()
 cursor.execute("SELECT NOW();")  # Test query
 print("Connected to RDS PostgreSQL!", cursor.fetchone())

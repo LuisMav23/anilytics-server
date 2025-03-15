@@ -40,9 +40,9 @@ jobs:
             set -e  # Exit immediately if a command fails
             
             # Ensure repo exists, clone if necessary
-            if [ ! -d "~/anilytics-server" ]; then
-              git clone https://github.com/your-repo/anilytics-server.git ~/anilytics-server
-            fi
+            # if [ ! -d "~/anilytics-server" ]; then
+            #   git clone https://github.com/your-repo/anilytics-server.git ~/anilytics-server
+            # fi
 
             # Navigate to the project directory
             cd ~/anilytics-server

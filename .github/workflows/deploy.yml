@@ -31,20 +31,20 @@ jobs:
           RDS_PSQL_PORT: ${{ secrets.RDS_PSQL_PORT }}
           RDS_PSQL_PASS: ${{ secrets.RDS_PSQL_PASS }}
           RDS_PSQL_DB: ${{ secrets.RDS_PSQL_DB }}
-
+        
         run: |
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << 'EOF'
             # Stop and remove existing container
-            docker stop flask_app || true
-            docker rm flask_app || true
+            docker stop anilytics_server || true
+            docker rm anilytics_server || true
             
             # Remove old image
-            docker rmi flask_app || true
+            docker rmi anilytics_server || true
             
             # Pull latest code
-            cd ~/flask-app
+            cd ~/anilytics-server
             git pull origin main
             
             # Create .env file
@@ -60,8 +60,8 @@ jobs:
             echo "RDS_PSQL_DB=${RDS_PSQL_DB}" >> .env
             
             # Build new Docker image
-            docker build -t flask_app .
+            docker build -t anilytics_server .
             
             # Run the new container with the .env file
-            docker run -d -p 80:5000 --env-file .env --name flask_app flask_app
+            docker run -d -p 80:5000 --env-file .env --name anilytics_server anilytics_server
           EOF

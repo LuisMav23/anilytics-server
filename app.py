@@ -62,8 +62,10 @@ def receive_plant_data():
     cursor = conn.cursor()
     if (data.get('ph') is None or data.get('tds') is None or 
         data.get('temperature') is None or data.get('humidity') is None or
-        data.get('waterTemperature') is None or data.get('waterLevel') is None or 
-        data.get('waterLevelCategory') is None):
+        data.get('waterTemperature') is None or data.get('waterLevel') is None or
+        data.get('temperatureStatus') is None or data.get('humidityStatus') is None or
+        data.get('waterTemperatureStatus') is None or data.get('tdsStatus') is None or
+        data.get('phStatus') is None or data.get('waterLevelStatus') is None):
         return jsonify({"status": "error", "message": "Invalid data format"})
     
     # if the table does not exist
@@ -76,13 +78,21 @@ def receive_plant_data():
             humidity FLOAT, 
             waterTemperature FLOAT, 
             waterLevel FLOAT, 
-            waterLevelCategory VARCHAR(255), 
+            temperatureStatus VARCHAR(255),
+            humidityStatus VARCHAR(255),
+            waterTemperatureStatus VARCHAR(255),
+            tdsStatus VARCHAR(255),
+            phStatus VARCHAR(255),
+            waterLevelStatus VARCHAR(255),
             created_at TIMESTAMP DEFAULT NOW()
         );
     """)
     cursor.execute("""
-        INSERT INTO plant_data (ph, tds, temperature, humidity, waterTemperature, waterLevel, waterLevelCategory) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s);
+        INSERT INTO plant_data (
+            ph, tds, temperature, humidity, waterTemperature, waterLevel, 
+            temperatureStatus, humidityStatus, waterTemperatureStatus, tdsStatus, phStatus, waterLevelStatus
+        ) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
     """, (
         data['ph'], 
         data['tds'], 
@@ -90,7 +100,12 @@ def receive_plant_data():
         data['humidity'],
         data['waterTemperature'],
         data['waterLevel'],
-        data['waterLevelCategory']
+        data['temperatureStatus'],
+        data['humidityStatus'],
+        data['waterTemperatureStatus'],
+        data['tdsStatus'], 
+        data['phStatus'], 
+        data['waterLevelStatus']
     ))
     conn.commit()
     cursor.close()
@@ -100,7 +115,6 @@ def receive_plant_data():
     socketio.emit('plant_data', data)
 
     return jsonify({"status": "success", "data": data})
-
 
 # FISH DATA ENDPOINTS
 @app.route('/fish_data', methods=['GET'])

@@ -70,6 +70,7 @@ def get_plant_data():
             })
         return jsonify(formatted_data)
     except Exception as e:
+        conn.rollback()
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/plant_data', methods=['POST'])
@@ -148,6 +149,7 @@ def receive_plant_data():
 
         return jsonify({"status": "success", "data": sensor_data})
     except Exception as e:
+        conn.rollback()
         return jsonify({"status": "error", "message": str(e)})
 
 # FISH DATA ENDPOINTS
@@ -176,6 +178,7 @@ def get_fish_data():
             })
         return jsonify(formatted_data)
     except Exception as e:
+        conn.rollback()
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/fish_data', methods=['POST'])
@@ -230,6 +233,7 @@ def receive_fish_data():
         socketio.emit('fish_data', fish_data)
         return jsonify({"status": "success", "data": fish_data})
     except Exception as e:
+        conn.rollback()
         return jsonify({"status": "error", "message": str(e)})
 
 @socketio.on('connect')

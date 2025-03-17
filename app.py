@@ -41,7 +41,7 @@ cursor.close()
 
 @app.route('/')
 def home():
-    return "Hello, World!"
+    return "Hello, Krischan!"
 
 # PLANT DATA ENDPOINTS
 @app.route('/plant_data', methods=['GET'])

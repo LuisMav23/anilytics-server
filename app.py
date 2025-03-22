@@ -28,7 +28,9 @@ socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_tim
 
 @app.route('/')
 def home():
-    return "Hello, World!"
+    return "Hello, World" \
+    "" \
+    "!"
 
 # PLANT DATA ENDPOINTS
 @app.route('/plant_data', methods=['GET'])
@@ -45,12 +47,6 @@ def get_plant_data():
                 "humidity": row[4],
                 "waterTemperature": row[5],
                 "waterLevel": row[6],
-                "temperatureStatus": row[7],
-                "humidityStatus": row[8],
-                "waterTemperatureStatus": row[9],
-                "tdsStatus": row[10],
-                "phStatus": row[11],
-                "waterLevelStatus": row[12]
             })
         return jsonify(formatted_data), 200
     except Exception as e:
@@ -62,10 +58,7 @@ def receive_plant_data():
         data = request.json
         if (data.get('ph') is None or data.get('tds') is None or 
             data.get('temperature') is None or data.get('humidity') is None or
-            data.get('waterTemperature') is None or data.get('waterLevel') is None or
-            data.get('temperatureStatus') is None or data.get('humidityStatus') is None or
-            data.get('waterTemperatureStatus') is None or data.get('tdsStatus') is None or
-            data.get('phStatus') is None or data.get('waterLevelStatus') is None):
+            data.get('waterTemperature') is None or data.get('waterLevel') is None):
             return jsonify({"status": "error", "message": "Invalid data format"}), 400
         
         
@@ -80,13 +73,7 @@ def receive_plant_data():
             "temperature": data.get("temperature"),
             "humidity": data.get("humidity"),
             "waterTemperature": data.get("waterTemperature"),
-            "waterLevel": data.get("waterLevel"),
-            "temperatureStatus": data.get("temperatureStatus"),
-            "humidityStatus": data.get("humidityStatus"),
-            "waterTemperatureStatus": data.get("waterTemperatureStatus"),
-            "tdsStatus": data.get("tdsStatus"),
-            "phStatus": data.get("phStatus"),
-            "waterLevelStatus": data.get("waterLevelStatus")
+            "waterLevel": data.get("waterLevel")
         }
         print("Sensor Data:", sensor_data)
         
@@ -108,10 +95,7 @@ def get_fish_data():
             formatted_data.append({
                 "waterLevel": row[1],
                 "ph": row[2],
-                "turbidity": row[3],
-                "waterLevelStatus": row[4],
-                "phStatus": row[5],
-                "turbidityStatus": row[6]
+                "turbidity": row[3]
             })
         return jsonify(formatted_data), 200
     except Exception as e:
@@ -122,11 +106,8 @@ def receive_fish_data():
     try:
         data = request.json
         if (data.get('waterLevel') is None or 
-            data.get('ph') is None or data.get('turbidity') is None or 
-            data.get('waterLevelStatus') is None or 
-            data.get('phStatus') is None or data.get('turbidityStatus') is None):
+            data.get('ph') is None or data.get('turbidity') is None):
             return jsonify({"status": "error", "message": "Invalid data format"}), 400
-        
         
         print(f"Received from ESP32: {data}")
         if not insert_fish_data_into_db(data):
@@ -135,10 +116,7 @@ def receive_fish_data():
         fish_data = {
             "waterLevel": data.get("waterLevel"),
             "ph": data.get("ph"),
-            "turbidity": data.get("turbidity"),
-            "waterLevelStatus": data.get("waterLevelStatus"),
-            "phStatus": data.get("phStatus"),
-            "turbidityStatus": data.get("turbidityStatus")
+            "turbidity": data.get("turbidity")
         }
         
         socketio.emit('fish_data', fish_data)

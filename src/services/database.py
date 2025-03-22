@@ -32,7 +32,7 @@ def get_plant_data_from_db(limit=10):
         conn.rollback()
         close_db_connection(conn)
         return None
-
+    
 def insert_plant_data_into_db(data):
     try:
         conn = get_db_connection()
@@ -46,34 +46,21 @@ def insert_plant_data_into_db(data):
                 humidity FLOAT, 
                 waterTemperature FLOAT, 
                 waterLevel FLOAT, 
-                temperatureStatus VARCHAR(255),
-                humidityStatus VARCHAR(255),
-                waterTemperatureStatus VARCHAR(255),
-                tdsStatus VARCHAR(255),
-                phStatus VARCHAR(255),
-                waterLevelStatus VARCHAR(255),
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
         cursor.execute("""
             INSERT INTO plant_data (
-                ph, tds, temperature, humidity, waterTemperature, waterLevel, 
-                temperatureStatus, humidityStatus, waterTemperatureStatus, tdsStatus, phStatus, waterLevelStatus
+                ph, tds, temperature, humidity, waterTemperature, waterLevel
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+            VALUES (%s, %s, %s, %s, %s, %s);
         """, (
             data['ph'],
             data['tds'],
             data['temperature'],
             data['humidity'],
             data['waterTemperature'],
-            data['waterLevel'],
-            data['temperatureStatus'],
-            data['humidityStatus'],
-            data['waterTemperatureStatus'],
-            data['tdsStatus'],
-            data['phStatus'],
-            data['waterLevelStatus']
+            data['waterLevel']
         ))
         conn.commit()
         cursor.close()
@@ -108,24 +95,18 @@ def insert_fish_data_into_db(data):
                 waterLevel FLOAT, 
                 ph FLOAT, 
                 turbidity FLOAT, 
-                waterLevelStatus VARCHAR(255),
-                phStatus VARCHAR(255),
-                turbidityStatus VARCHAR(255),
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
         cursor.execute("""
             INSERT INTO fish_data (
-                waterLevel, ph, turbidity, waterLevelStatus, phStatus, turbidityStatus
+                waterLevel, ph, turbidity
             ) 
-            VALUES (%s, %s, %s, %s, %s, %s);            
+            VALUES (%s, %s, %s);            
         """, (
             data['waterLevel'],
             data['ph'],
-            data['turbidity'],
-            data['waterLevelStatus'],
-            data['phStatus'],
-            data['turbidityStatus']
+            data['turbidity']
         ))
         conn.commit()
         cursor.close()

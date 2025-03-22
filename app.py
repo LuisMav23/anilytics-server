@@ -28,7 +28,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_tim
 
 @app.route('/')
 def home():
-    return "Hello, Krischan!"
+    return "Hello, World!"
 
 # PLANT DATA ENDPOINTS
 @app.route('/plant_data', methods=['GET'])

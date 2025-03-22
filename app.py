@@ -67,9 +67,9 @@ def get_plant_data():
                 "phStatus": row[11],
                 "waterLevelStatus": row[12]
             })
-        return jsonify(formatted_data)
+        return jsonify(formatted_data), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/plant_data', methods=['POST'])
 def receive_plant_data():
@@ -81,13 +81,13 @@ def receive_plant_data():
             data.get('temperatureStatus') is None or data.get('humidityStatus') is None or
             data.get('waterTemperatureStatus') is None or data.get('tdsStatus') is None or
             data.get('phStatus') is None or data.get('waterLevelStatus') is None):
-            return jsonify({"status": "error", "message": "Invalid data format"})
+            return jsonify({"status": "error", "message": "Invalid data format"}), 400
         
         
         # Print the time of request
         print("('/plant_data') Request received at:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         if not insert_plant_data_into_db(data):
-            return jsonify({"status": "error", "message": "Error inserting data into database"})
+            return jsonify({"status": "error", "message": "Error inserting data into database"}), 500
         
         sensor_data = {
             "ph": data.get("ph"),
@@ -108,9 +108,9 @@ def receive_plant_data():
         # Broadcast to all connected clients
         socketio.emit('plant_data', sensor_data)
 
-        return jsonify({"status": "success", "data": sensor_data})
+        return jsonify({"status": "success", "data": sensor_data}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # FISH DATA ENDPOINTS
 @app.route('/fish_data', methods=['GET'])
@@ -128,9 +128,9 @@ def get_fish_data():
                 "phStatus": row[5],
                 "turbidityStatus": row[6]
             })
-        return jsonify(formatted_data)
+        return jsonify(formatted_data), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/fish_data', methods=['POST'])
 def receive_fish_data():
@@ -157,9 +157,9 @@ def receive_fish_data():
         }
         
         socketio.emit('fish_data', fish_data)
-        return jsonify({"status": "success", "data": fish_data})
+        return jsonify({"status": "success", "data": fish_data}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @socketio.on('connect')
 def handle_connect():

@@ -26,21 +26,6 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_timeout=10, ping_interval=5)
 
-# Replace with your RDS details
-def get_db_connection():
-    conn = psycopg2.connect(
-        host=os.getenv("RDS_PSQL_HOST"), # anilytics-pgsql.c38ygweaynwh.ap-southeast-1.rds.amazonaws.com
-        user=os.getenv("RDS_PSQL_USER"), # postgres
-        password=os.getenv("RDS_PSQL_PASS"), # LuisMaverick2323_
-        dbname=os.getenv("RDS_PSQL_DB"), # anilytics
-        port=os.getenv("RDS_PSQL_PORT") # 5432
-    )
-    return conn
-
-def close_db_connection(conn):
-    if conn:
-        conn.close()
-
 @app.route('/')
 def home():
     return "Hello, Krischan!"
@@ -140,7 +125,7 @@ def receive_fish_data():
             data.get('ph') is None or data.get('turbidity') is None or 
             data.get('waterLevelStatus') is None or 
             data.get('phStatus') is None or data.get('turbidityStatus') is None):
-            return jsonify({"status": "error", "message": "Invalid data format"})
+            return jsonify({"status": "error", "message": "Invalid data format"}), 400
         
         
         print(f"Received from ESP32: {data}")

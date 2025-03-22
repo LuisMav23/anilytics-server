@@ -22,22 +22,19 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_timeout=10, ping_interval=5)
 
 # Replace with your RDS details
-conn = psycopg2.connect(
-    host=os.getenv("RDS_PSQL_HOST"), # anilytics-pgsql.c38ygweaynwh.ap-southeast-1.rds.amazonaws.com
-    user=os.getenv("RDS_PSQL_USER"), # postgres
-    password=os.getenv("RDS_PSQL_PASS"), # LuisMaverick2323_
-    dbname=os.getenv("RDS_PSQL_DB"), # anilytics
-    port=os.getenv("RDS_PSQL_PORT") # 5432
-)
+def get_db_connection():
+    conn = psycopg2.connect(
+        host=os.getenv("RDS_PSQL_HOST"), # anilytics-pgsql.c38ygweaynwh.ap-southeast-1.rds.amazonaws.com
+        user=os.getenv("RDS_PSQL_USER"), # postgres
+        password=os.getenv("RDS_PSQL_PASS"), # LuisMaverick2323_
+        dbname=os.getenv("RDS_PSQL_DB"), # anilytics
+        port=os.getenv("RDS_PSQL_PORT") # 5432
+    )
+    return conn
 
-
-cursor = conn.cursor()
-cursor.execute("SELECT NOW();")  # Test query
-print("Connected to RDS PostgreSQL!", cursor.fetchone())
-
-cursor.close()
-
-#define request body schema
+def close_db_connection(conn):
+    if conn:
+        conn.close()
 
 @app.route('/')
 def home():
@@ -48,10 +45,12 @@ def home():
 def get_plant_data():
     try:
         limit = int(request.args.get('limit', 10))
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT id, ph, tds, temperature, humidity, waterTemperature, waterLevel, temperatureStatus, humidityStatus, waterTemperatureStatus, tdsStatus, phStatus, waterLevelStatus, created_at FROM plant_data ORDER BY created_at DESC LIMIT %s;", (limit,))
         rows = cursor.fetchall()
         cursor.close()
+        close_db_connection(conn)
         formatted_data = []
         for row in rows:
             formatted_data.append({
@@ -71,12 +70,14 @@ def get_plant_data():
         return jsonify(formatted_data)
     except Exception as e:
         conn.rollback()
+        close_db_connection(conn)
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/plant_data', methods=['POST'])
 def receive_plant_data():
     try:
         data = request.json
+        conn = get_db_connection()
         cursor = conn.cursor()
         if (data.get('ph') is None or data.get('tds') is None or 
             data.get('temperature') is None or data.get('humidity') is None or
@@ -127,6 +128,7 @@ def receive_plant_data():
         ))
         conn.commit()
         cursor.close()
+        close_db_connection(conn)
         print(f"Received from ESP32: {data}")
         sensor_data = {
             "ph": data.get("ph"),
@@ -150,6 +152,7 @@ def receive_plant_data():
         return jsonify({"status": "success", "data": sensor_data})
     except Exception as e:
         conn.rollback()
+        close_db_connection(conn)
         return jsonify({"status": "error", "message": str(e)})
 
 # FISH DATA ENDPOINTS
@@ -157,6 +160,7 @@ def receive_plant_data():
 def get_fish_data():
     try:
         limit = int(request.args.get('limit', 10))
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT id, waterLevel, ph, turbidity, waterLevelStatus, phStatus, turbidityStatus, created_at 
@@ -166,6 +170,7 @@ def get_fish_data():
         """, (limit,))
         rows = cursor.fetchall()
         cursor.close()
+        close_db_connection(conn)
         formatted_data = []
         for row in rows:
             formatted_data.append({
@@ -179,12 +184,14 @@ def get_fish_data():
         return jsonify(formatted_data)
     except Exception as e:
         conn.rollback()
+        close_db_connection(conn)
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/fish_data', methods=['POST'])
 def receive_fish_data():
     try:
         data = request.json
+        conn = get_db_connection()
         cursor = conn.cursor()
         if (data.get('waterLevel') is None or 
             data.get('ph') is None or data.get('turbidity') is None or 
@@ -219,6 +226,7 @@ def receive_fish_data():
         ))
         conn.commit()
         cursor.close()
+        close_db_connection(conn)
         print(f"Received from ESP32: {data}")
         
         fish_data = {
@@ -234,6 +242,7 @@ def receive_fish_data():
         return jsonify({"status": "success", "data": fish_data})
     except Exception as e:
         conn.rollback()
+        close_db_connection(conn)
         return jsonify({"status": "error", "message": str(e)})
 
 @socketio.on('connect')

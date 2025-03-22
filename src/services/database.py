@@ -23,7 +23,7 @@ def get_plant_data_from_db(limit=10):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM plant_data ORDER BY created_at DESC LIMIT %s;", (limit,))
+        cursor.execute("SELECT id, ph, tds, temperature, humidity, waterTemperature, created_at FROM plant_data ORDER BY created_at DESC LIMIT %s;", (limit,))
         rows = cursor.fetchall()
         cursor.close()
         close_db_connection(conn)
@@ -45,22 +45,20 @@ def insert_plant_data_into_db(data):
                 temperature FLOAT, 
                 humidity FLOAT, 
                 waterTemperature FLOAT, 
-                waterLevel FLOAT, 
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
         cursor.execute("""
             INSERT INTO plant_data (
-                ph, tds, temperature, humidity, waterTemperature, waterLevel
+                ph, tds, temperature, humidity, waterTemperature
             )
-            VALUES (%s, %s, %s, %s, %s, %s);
+            VALUES (%s, %s, %s, %s, %s);
         """, (
             data['ph'],
             data['tds'],
             data['temperature'],
             data['humidity'],
-            data['waterTemperature'],
-            data['waterLevel']
+            data['waterTemperature']
         ))
         conn.commit()
         cursor.close()

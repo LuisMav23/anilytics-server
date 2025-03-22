@@ -45,8 +45,7 @@ def get_plant_data():
                 "tds": row[2],
                 "temperature": row[3],
                 "humidity": row[4],
-                "waterTemperature": row[5],
-                "waterLevel": row[6],
+                "waterTemperature": row[5]
             })
         return jsonify(formatted_data), 200
     except Exception as e:
@@ -58,7 +57,7 @@ def receive_plant_data():
         data = request.json
         if (data.get('ph') is None or data.get('tds') is None or 
             data.get('temperature') is None or data.get('humidity') is None or
-            data.get('waterTemperature') is None or data.get('waterLevel') is None):
+            data.get('waterTemperature') is None):
             return jsonify({"status": "error", "message": "Invalid data format"}), 400
         
         
@@ -72,8 +71,7 @@ def receive_plant_data():
             "tds": data.get("tds"),
             "temperature": data.get("temperature"),
             "humidity": data.get("humidity"),
-            "waterTemperature": data.get("waterTemperature"),
-            "waterLevel": data.get("waterLevel")
+            "waterTemperature": data.get("waterTemperature")
         }
         print("Sensor Data:", sensor_data)
         

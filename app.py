@@ -12,9 +12,13 @@ import google.generativeai as genai
 
 from dotenv import load_dotenv
 import os
+from datetime import datetime
+        
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
+
+
 
 load_dotenv()
 
@@ -79,7 +83,9 @@ def receive_plant_data():
             data.get('phStatus') is None or data.get('waterLevelStatus') is None):
             return jsonify({"status": "error", "message": "Invalid data format"})
         
-        print(f"Received from ESP32: {data}")
+        
+        # Print the time of request
+        print("('/plant_data') Request received at:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         if not insert_plant_data_into_db(data):
             return jsonify({"status": "error", "message": "Error inserting data into database"})
         

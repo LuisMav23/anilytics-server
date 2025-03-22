@@ -6,6 +6,7 @@ import psycopg2
 from uuid import uuid4
 
 from src.config import get_dynamodb, get_sns
+from src.services.database import get_plant_data_from_db, get_fish_data_from_db, insert_plant_data_into_db, insert_fish_data_into_db
 
 import google.generativeai as genai
 
@@ -45,12 +46,7 @@ def home():
 def get_plant_data():
     try:
         limit = int(request.args.get('limit', 10))
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, ph, tds, temperature, humidity, waterTemperature, waterLevel, temperatureStatus, humidityStatus, waterTemperatureStatus, tdsStatus, phStatus, waterLevelStatus, created_at FROM plant_data ORDER BY created_at DESC LIMIT %s;", (limit,))
-        rows = cursor.fetchall()
-        cursor.close()
-        close_db_connection(conn)
+        rows = get_plant_data_from_db(limit)
         formatted_data = []
         for row in rows:
             formatted_data.append({
@@ -69,16 +65,12 @@ def get_plant_data():
             })
         return jsonify(formatted_data)
     except Exception as e:
-        conn.rollback()
-        close_db_connection(conn)
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/plant_data', methods=['POST'])
 def receive_plant_data():
     try:
         data = request.json
-        conn = get_db_connection()
-        cursor = conn.cursor()
         if (data.get('ph') is None or data.get('tds') is None or 
             data.get('temperature') is None or data.get('humidity') is None or
             data.get('waterTemperature') is None or data.get('waterLevel') is None or
@@ -87,49 +79,10 @@ def receive_plant_data():
             data.get('phStatus') is None or data.get('waterLevelStatus') is None):
             return jsonify({"status": "error", "message": "Invalid data format"})
         
-        # if the table does not exist
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS plant_data (
-                id SERIAL PRIMARY KEY, 
-                ph FLOAT, 
-                tds FLOAT, 
-                temperature FLOAT, 
-                humidity FLOAT, 
-                waterTemperature FLOAT, 
-                waterLevel FLOAT, 
-                temperatureStatus VARCHAR(255),
-                humidityStatus VARCHAR(255),
-                waterTemperatureStatus VARCHAR(255),
-                tdsStatus VARCHAR(255),
-                phStatus VARCHAR(255),
-                waterLevelStatus VARCHAR(255),
-                created_at TIMESTAMP DEFAULT NOW()
-            );
-        """)
-        cursor.execute("""
-            INSERT INTO plant_data (
-                ph, tds, temperature, humidity, waterTemperature, waterLevel, 
-                temperatureStatus, humidityStatus, waterTemperatureStatus, tdsStatus, phStatus, waterLevelStatus
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-        """, (
-            data['ph'],
-            data['tds'],
-            data['temperature'],
-            data['humidity'],
-            data['waterTemperature'],
-            data['waterLevel'],
-            data['temperatureStatus'],
-            data['humidityStatus'],
-            data['waterTemperatureStatus'],
-            data['tdsStatus'],
-            data['phStatus'],
-            data['waterLevelStatus']
-        ))
-        conn.commit()
-        cursor.close()
-        close_db_connection(conn)
         print(f"Received from ESP32: {data}")
+        if not insert_plant_data_into_db(data):
+            return jsonify({"status": "error", "message": "Error inserting data into database"})
+        
         sensor_data = {
             "ph": data.get("ph"),
             "tds": data.get("tds"),
@@ -151,8 +104,6 @@ def receive_plant_data():
 
         return jsonify({"status": "success", "data": sensor_data})
     except Exception as e:
-        conn.rollback()
-        close_db_connection(conn)
         return jsonify({"status": "error", "message": str(e)})
 
 # FISH DATA ENDPOINTS
@@ -160,17 +111,7 @@ def receive_plant_data():
 def get_fish_data():
     try:
         limit = int(request.args.get('limit', 10))
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id, waterLevel, ph, turbidity, waterLevelStatus, phStatus, turbidityStatus, created_at 
-            FROM fish_data 
-            ORDER BY created_at DESC 
-            LIMIT %s;
-        """, (limit,))
-        rows = cursor.fetchall()
-        cursor.close()
-        close_db_connection(conn)
+        rows = get_fish_data_from_db(limit)
         formatted_data = []
         for row in rows:
             formatted_data.append({
@@ -183,51 +124,22 @@ def get_fish_data():
             })
         return jsonify(formatted_data)
     except Exception as e:
-        conn.rollback()
-        close_db_connection(conn)
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/fish_data', methods=['POST'])
 def receive_fish_data():
     try:
         data = request.json
-        conn = get_db_connection()
-        cursor = conn.cursor()
         if (data.get('waterLevel') is None or 
             data.get('ph') is None or data.get('turbidity') is None or 
             data.get('waterLevelStatus') is None or 
             data.get('phStatus') is None or data.get('turbidityStatus') is None):
             return jsonify({"status": "error", "message": "Invalid data format"})
         
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS fish_data (
-                id SERIAL PRIMARY KEY, 
-                waterLevel FLOAT, 
-                ph FLOAT, 
-                turbidity FLOAT, 
-                waterLevelStatus VARCHAR(255),
-                phStatus VARCHAR(255),
-                turbidityStatus VARCHAR(255),
-                created_at TIMESTAMP DEFAULT NOW()
-            );
-        """)
-        cursor.execute("""
-            INSERT INTO fish_data (
-                waterLevel, ph, turbidity, waterLevelStatus, phStatus, turbidityStatus
-            ) 
-            VALUES (%s, %s, %s, %s, %s, %s);
-        """, (
-            data['waterLevel'],
-            data['ph'],
-            data['turbidity'],
-            data['waterLevelStatus'],
-            data['phStatus'],
-            data['turbidityStatus']
-        ))
-        conn.commit()
-        cursor.close()
-        close_db_connection(conn)
+        
         print(f"Received from ESP32: {data}")
+        if not insert_fish_data_into_db(data):
+            return jsonify({"status": "error", "message": "Error inserting data into database"})
         
         fish_data = {
             "waterLevel": data.get("waterLevel"),
@@ -241,8 +153,6 @@ def receive_fish_data():
         socketio.emit('fish_data', fish_data)
         return jsonify({"status": "success", "data": fish_data})
     except Exception as e:
-        conn.rollback()
-        close_db_connection(conn)
         return jsonify({"status": "error", "message": str(e)})
 
 @socketio.on('connect')

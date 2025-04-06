@@ -45,7 +45,8 @@ def get_plant_data():
                 "tds": row[2],
                 "temperature": row[3],
                 "humidity": row[4],
-                "waterTemperature": row[5]
+                "waterTemperature": row[5],
+                "created_at": row[6].strftime("%Y-%m-%d %H:%M:%S"),
             })
         return jsonify(formatted_data), 200
     except Exception as e:
@@ -71,7 +72,8 @@ def receive_plant_data():
             "tds": data.get("tds"),
             "temperature": data.get("temperature"),
             "humidity": data.get("humidity"),
-            "waterTemperature": data.get("waterTemperature")
+            "waterTemperature": data.get("waterTemperature"),
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         print("Sensor Data:", sensor_data)
         
@@ -93,7 +95,8 @@ def get_fish_data():
             formatted_data.append({
                 "waterLevel": row[1],
                 "ph": row[2],
-                "turbidity": row[3]
+                "turbidity": row[3],
+                "created_at": row[4].strftime("%Y-%m-%d %H:%M:%S")
             })
         return jsonify(formatted_data), 200
     except Exception as e:
@@ -114,7 +117,8 @@ def receive_fish_data():
         fish_data = {
             "waterLevel": data.get("waterLevel"),
             "ph": data.get("ph"),
-            "turbidity": data.get("turbidity")
+            "turbidity": data.get("turbidity"),
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
         socketio.emit('fish_data', fish_data)

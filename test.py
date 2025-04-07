@@ -1,26 +1,18 @@
-import socketio
+import datetime
+import pytz
 
-# Define API and WebSocket URLs
-API_URL = "http://ec2-18-139-217-2.ap-southeast-1.compute.amazonaws.com/plant_data"
-WEBSOCKET_URL = "http://ec2-18-139-217-2.ap-southeast-1.compute.amazonaws.com"  # No need for /socket.io
+def main():
+    # Get current UTC time
+    utc_now = datetime.datetime.now(pytz.utc)
+    print("Current UTC time:", utc_now.strftime("%Y-%m-%d %H:%M:%S %Z%z"))
 
-# Initialize Socket.IO client
-sio = socketio.Client()
+    # List of timezones to test
+    timezones = ['America/New_York', 'Europe/London', 'Asia/Tokyo', 'Australia/Sydney', 'Asia/Manila']
 
-@sio.event
-def connect():
-    print("Connected to WebSocket server!")
+    for tz_name in timezones:
+        tz = pytz.timezone(tz_name)
+        local_time = utc_now.astimezone(tz)
+        print(f"Local time in {tz_name}: {local_time.strftime('%Y-%m-%d %H:%M:%S %Z%z')}")
 
-@sio.on('plant_data')
-def on_message(data):
-    print("Received real-time data:", data)
-
-@sio.event
-def disconnect():
-    print("Disconnected from WebSocket server")
-
-# Connect to the WebSocket server
-sio.connect(WEBSOCKET_URL)
-
-# Keep the connection open to listen for messages
-sio.wait()
+if __name__ == "__main__":
+    main()

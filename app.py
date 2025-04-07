@@ -17,6 +17,7 @@ from datetime import datetime
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
+import pytz
 
 
 
@@ -33,6 +34,8 @@ def home():
     "!"
 
 # PLANT DATA ENDPOINTS
+ph_tz = pytz.timezone("Asia/Manila")
+
 @app.route('/plant_data', methods=['GET'])
 def get_plant_data():
     try:
@@ -40,12 +43,18 @@ def get_plant_data():
         rows = get_plant_data_from_db(limit)
         formatted_data = []
         for row in rows:
+            timestamp = row[5]
+            # Localize timestamp if naive, then convert to PH timezone
+            if timestamp.tzinfo is None:
+                timestamp = ph_tz.localize(timestamp)
+            else:
+                timestamp = timestamp.astimezone(ph_tz)
             formatted_data.append({
                 "ph": row[1],
                 "tds": row[2],
                 "temperature": row[3],
                 "humidity": row[4],
-                "created_at": row[5].strftime("%Y-%m-%d %H:%M:%S"),
+                "created_at": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             })
         return jsonify(formatted_data), 200
     except Exception as e:
@@ -59,9 +68,10 @@ def receive_plant_data():
             data.get('temperature') is None or data.get('humidity') is None):
             return jsonify({"status": "error", "message": "Invalid data format"}), 400
         
+        # Print the time of request in PH timezone
+        current_time = datetime.now(ph_tz)
+        print("('/plant_data') Request received at:", current_time.strftime("%Y-%m-%d %H:%M:%S"))
         
-        # Print the time of request
-        print("('/plant_data') Request received at:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         if not insert_plant_data_into_db(data):
             return jsonify({"status": "error", "message": "Error inserting data into database"}), 500
         
@@ -70,7 +80,7 @@ def receive_plant_data():
             "tds": data.get("tds"),
             "temperature": data.get("temperature"),
             "humidity": data.get("humidity"),
-            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "created_at": current_time.strftime("%Y-%m-%d %H:%M:%S")
         }
         print("Sensor Data:", sensor_data)
         
@@ -89,11 +99,17 @@ def get_fish_data():
         rows = get_fish_data_from_db(limit)
         formatted_data = []
         for row in rows:
+            # Process timestamp for fish data
+            timestamp = row[4]
+            if timestamp.tzinfo is None:
+                timestamp = ph_tz.localize(timestamp)
+            else:
+                timestamp = timestamp.astimezone(ph_tz)
             formatted_data.append({
                 "turbidity": row[1],
                 "waterTemperature": row[2],
                 "ph": row[3],
-                "created_at": row[4].strftime("%Y-%m-%d %H:%M:%S")
+                "created_at": timestamp.strftime("%Y-%m-%d %H:%M:%S")
             })
         return jsonify(formatted_data), 200
     except Exception as e:
@@ -111,11 +127,12 @@ def receive_fish_data():
         if not insert_fish_data_into_db(data):
             return jsonify({"status": "error", "message": "Error inserting data into database"})
         
+        current_time = datetime.now(ph_tz)
         fish_data = {
             "turbidity": data.get("turbidity"),
             "waterTemperature": data.get("waterTemperature"),
             "ph": data.get("ph"),
-            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "created_at": current_time.strftime("%Y-%m-%d %H:%M:%S")
         }
         
         socketio.emit('fish_data', fish_data)

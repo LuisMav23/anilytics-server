@@ -67,9 +67,9 @@ def receive_plant_data():
         if (data.get('ph') is None or data.get('tds') is None or 
             data.get('temperature') is None or data.get('humidity') is None):
             return jsonify({"status": "error", "message": "Invalid data format"}), 400
-        
-        # Print the time of request in PH timezone
         current_time = datetime.now(ph_tz)
+        data["created_at"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
+
         print("('/plant_data') Request received at:", current_time.strftime("%Y-%m-%d %H:%M:%S"))
         
         if not insert_plant_data_into_db(data):
@@ -80,7 +80,7 @@ def receive_plant_data():
             "tds": data.get("tds"),
             "temperature": data.get("temperature"),
             "humidity": data.get("humidity"),
-            "created_at": current_time.strftime("%Y-%m-%d %H:%M:%S")
+            "created_at": data.get("created_at")
         }
         print("Sensor Data:", sensor_data)
         
@@ -122,17 +122,18 @@ def receive_fish_data():
         if (data.get('waterTemperature') is None or 
             data.get('ph') is None or data.get('turbidity') is None):
             return jsonify({"status": "error", "message": "Invalid data format"}), 400
+        current_time = datetime.now(ph_tz)
+        data['created_at'] = current_time.strftime("%Y-%m-%d %H:%M:%S")
         
         print(f"Received from ESP32: {data}")
         if not insert_fish_data_into_db(data):
             return jsonify({"status": "error", "message": "Error inserting data into database"})
         
-        current_time = datetime.now(ph_tz)
         fish_data = {
             "turbidity": data.get("turbidity"),
             "waterTemperature": data.get("waterTemperature"),
             "ph": data.get("ph"),
-            "created_at": current_time.strftime("%Y-%m-%d %H:%M:%S")
+            "created_at": data.get("created_at")
         }
         
         socketio.emit('fish_data', fish_data)

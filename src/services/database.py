@@ -51,12 +51,13 @@ def insert_plant_data_into_db(data):
             INSERT INTO plant_data (
                 ph, tds, temperature, humidity
             )
-            VALUES (%s, %s, %s, %s);
+            VALUES (%s, %s, %s, %s, %s);
         """, (
             data['ph'],
             data['tds'],
             data['temperature'],
             data['humidity'],
+            data['created_at']
         ))
         conn.commit()
         cursor.close()
@@ -98,11 +99,12 @@ def insert_fish_data_into_db(data):
             INSERT INTO fish_data (
                 turbidity, waterTemperature, ph
             ) 
-            VALUES (%s, %s, %s);            
+            VALUES (%s, %s, %s, %s);            
         """, (
             data['turbidity'],
             data['waterTemperature'],
             data['ph'],
+            data['created_at']
         ))
         conn.commit()
         cursor.close()

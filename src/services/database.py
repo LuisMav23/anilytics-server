@@ -49,7 +49,7 @@ def insert_plant_data_into_db(data):
         """)
         cursor.execute("""
             INSERT INTO plant_data (
-                ph, tds, temperature, humidity
+                ph, tds, temperature, humidity, created_at
             )
             VALUES (%s, %s, %s, %s, %s);
         """, (
@@ -97,7 +97,7 @@ def insert_fish_data_into_db(data):
         """)
         cursor.execute("""
             INSERT INTO fish_data (
-                turbidity, waterTemperature, ph
+                turbidity, waterTemperature, ph, created_at
             ) 
             VALUES (%s, %s, %s, %s);            
         """, (

@@ -45,8 +45,7 @@ def get_plant_data():
                 "tds": row[2],
                 "temperature": row[3],
                 "humidity": row[4],
-                "waterTemperature": row[5],
-                "created_at": row[6].strftime("%Y-%m-%d %H:%M:%S"),
+                "created_at": row[5].strftime("%Y-%m-%d %H:%M:%S"),
             })
         return jsonify(formatted_data), 200
     except Exception as e:
@@ -57,8 +56,7 @@ def receive_plant_data():
     try:
         data = request.json
         if (data.get('ph') is None or data.get('tds') is None or 
-            data.get('temperature') is None or data.get('humidity') is None or
-            data.get('waterTemperature') is None):
+            data.get('temperature') is None or data.get('humidity') is None):
             return jsonify({"status": "error", "message": "Invalid data format"}), 400
         
         
@@ -72,7 +70,6 @@ def receive_plant_data():
             "tds": data.get("tds"),
             "temperature": data.get("temperature"),
             "humidity": data.get("humidity"),
-            "waterTemperature": data.get("waterTemperature"),
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         print("Sensor Data:", sensor_data)
@@ -93,9 +90,9 @@ def get_fish_data():
         formatted_data = []
         for row in rows:
             formatted_data.append({
-                "waterLevel": row[1],
-                "ph": row[2],
-                "turbidity": row[3],
+                "turbidity": row[1],
+                "waterTemperature": row[2],
+                "ph": row[3],
                 "created_at": row[4].strftime("%Y-%m-%d %H:%M:%S")
             })
         return jsonify(formatted_data), 200
@@ -106,7 +103,7 @@ def get_fish_data():
 def receive_fish_data():
     try:
         data = request.json
-        if (data.get('waterLevel') is None or 
+        if (data.get('waterTemperature') is None or 
             data.get('ph') is None or data.get('turbidity') is None):
             return jsonify({"status": "error", "message": "Invalid data format"}), 400
         
@@ -115,9 +112,9 @@ def receive_fish_data():
             return jsonify({"status": "error", "message": "Error inserting data into database"})
         
         fish_data = {
-            "waterLevel": data.get("waterLevel"),
-            "ph": data.get("ph"),
             "turbidity": data.get("turbidity"),
+            "waterTemperature": data.get("waterTemperature"),
+            "ph": data.get("ph"),
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         

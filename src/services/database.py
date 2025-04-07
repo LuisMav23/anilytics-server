@@ -23,7 +23,7 @@ def get_plant_data_from_db(limit=10):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, ph, tds, temperature, humidity, waterTemperature, created_at FROM plant_data ORDER BY created_at DESC LIMIT %s;", (limit,))
+        cursor.execute("SELECT * FROM plant_data ORDER BY created_at DESC LIMIT %s;", (limit,))
         rows = cursor.fetchall()
         cursor.close()
         close_db_connection(conn)
@@ -44,21 +44,19 @@ def insert_plant_data_into_db(data):
                 tds FLOAT, 
                 temperature FLOAT, 
                 humidity FLOAT, 
-                waterTemperature FLOAT, 
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
         cursor.execute("""
             INSERT INTO plant_data (
-                ph, tds, temperature, humidity, waterTemperature
+                ph, tds, temperature, humidity
             )
-            VALUES (%s, %s, %s, %s, %s);
+            VALUES (%s, %s, %s, %s);
         """, (
             data['ph'],
             data['tds'],
             data['temperature'],
             data['humidity'],
-            data['waterTemperature']
         ))
         conn.commit()
         cursor.close()
@@ -90,21 +88,21 @@ def insert_fish_data_into_db(data):
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS fish_data (
                 id SERIAL PRIMARY KEY, 
-                waterLevel FLOAT, 
-                ph FLOAT, 
                 turbidity FLOAT, 
+                waterTemperature FLOAT, 
+                ph FLOAT, 
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
         cursor.execute("""
             INSERT INTO fish_data (
-                waterLevel, ph, turbidity
+                turbidity, waterTemperature, ph
             ) 
             VALUES (%s, %s, %s);            
         """, (
-            data['waterLevel'],
+            data['turbidity'],
+            data['waterTemperature'],
             data['ph'],
-            data['turbidity']
         ))
         conn.commit()
         cursor.close()

@@ -272,7 +272,7 @@ def notify():
             MessageAttributes={
                 'AWS.SNS.SMS.SenderID': {
                     'DataType': 'String',
-                    'StringValue': 'Anilytics-Alerts'  # Replace with your sender name (max 11 alphanumeric characters)
+                    'StringValue': 'Anilytics'  # Replace with your sender name (max 11 alphanumeric characters)
                 }
             }
         )

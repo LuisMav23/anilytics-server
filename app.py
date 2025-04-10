@@ -268,13 +268,7 @@ def notify():
     try:
         response = sns_client.publish(
             PhoneNumber=number,
-            Message=message,
-            MessageAttributes={
-                'AWS.SNS.SMS.SenderID': {
-                    'DataType': 'String',
-                    'StringValue': 'Anilytics'  # Replace with your sender name (max 11 alphanumeric characters)
-                }
-            }
+            Message=message
         )
         return jsonify({"status": "success", "data": {"number": number, "message": message, "message_id": response["MessageId"]}})
     except Exception as e:

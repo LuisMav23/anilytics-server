@@ -270,7 +270,8 @@ def request_verification(number, sns_client):
 @app.route('/notify', methods=['POST'])
 def notify():
     number = "+" + request.args.get('number')
-    message = "Hello, World!"
+    request = request.json
+    message = request.get("message")
     sns_client = get_sns()
 
     if not number:

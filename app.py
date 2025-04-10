@@ -278,10 +278,10 @@ def notify():
         if not number:
             return jsonify({"status": "error", "message": "Phone number is required"}), 400
 
-            response = sns_client.publish(
-                PhoneNumber=number,
-                Message=message
-            )
+        response = sns_client.publish(
+            PhoneNumber=number,
+            Message=message
+        )
         return jsonify({"status": "success", "data": {"number": number, "message": message, "message_id": response["MessageId"]}})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

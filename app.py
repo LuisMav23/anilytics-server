@@ -221,7 +221,6 @@ def chat():
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-2.0-flash-lite")
     generation_config = {
-        "max_output_tokens": 100,  # Limit response tokens
         "temperature": 0.5,         # Medium randomness
         "top_p": 0.9,               # High diversity
     }

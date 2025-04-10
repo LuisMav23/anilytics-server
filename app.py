@@ -172,49 +172,44 @@ def chat():
 
     messages = messages[-5:]  # Keep only the last 5 messages for context
 
-    # Fetch average plant data (last 10 records)
+    # Fetch raw plant data (last 10 records)
     plant_rows = get_plant_data_from_db(10)
     if plant_rows:
-        avg_ph = sum(row[1] for row in plant_rows) / len(plant_rows)
-        avg_tds = sum(row[2] for row in plant_rows) / len(plant_rows)
-        avg_temp = sum(row[3] for row in plant_rows) / len(plant_rows)
-        avg_humidity = sum(row[4] for row in plant_rows) / len(plant_rows)
+        plant_data_info = "\n".join(
+            [f"ph: {row[1]}, tds: {row[2]}, temperature: {row[3]}, humidity: {row[4]}, created_at: {row[5].strftime('%Y-%m-%d %H:%M:%S')}" for row in plant_rows]
+        )
     else:
-        avg_ph = avg_tds = avg_temp = avg_humidity = None
+        plant_data_info = "No plant data available."
 
-    # Fetch average fish data (last 10 records)
+    # Fetch raw fish data (last 10 records)
     fish_rows = get_fish_data_from_db(10)
     if fish_rows:
-        avg_turbidity = sum(row[1] for row in fish_rows) / len(fish_rows)
-        avg_water_temp = sum(row[2] for row in fish_rows) / len(fish_rows)
-        avg_fish_ph = sum(row[3] for row in fish_rows) / len(fish_rows)
+        fish_data_info = "\n".join(
+            [f"turbidity: {row[1]}, waterTemperature: {row[2]}, ph: {row[3]}, created_at: {row[4].strftime('%Y-%m-%d %H:%M:%S')}" for row in fish_rows]
+        )
     else:
-        avg_turbidity = avg_water_temp = avg_fish_ph = None
+        fish_data_info = "No fish data available."
 
-    averages_info = "Plant Data Averages: "
-    averages_info += (f"ph: {avg_ph:.2f} | tds: {avg_tds:.2f} | temperature: {avg_temp:.2f} | humidity: {avg_humidity:.2f}\n"
-                      if avg_ph is not None else "No plant data available.\n")
-    averages_info += "Fish Data Averages: "
-    averages_info += (f"turbidity: {avg_turbidity:.2f} | waterTemperature: {avg_water_temp:.2f} | ph: {avg_fish_ph:.2f}"
-                      if avg_turbidity is not None else "No fish data available.")
+    sensor_data_info = "Plant Data:\n" + plant_data_info + "\n\nFish Data:\n" + fish_data_info
 
     # Prompt Template
     prompt_template = """You are an AI chatbot that provides helpful information about how to care for aquaponic systems.
-    You will provide information and suggestions to users about their aquaponic systems.
+You will provide information and suggestions to users about their aquaponic systems. Answer in a simple way and if the user is asking for
+instructions, answer it in a clear and step by step manner. Make it as descriptive but as simple as possible.
 
-    Conversation History:
-    {history}
+Conversation History:
+{history}
 
-    Sensor Averages:
-    {averages}
+Sensor Data:
+{sensor_data}
 
-    User: {query}
-    Bot:"""
+User: {query}
+Bot:"""
 
     conversation_history = "\n".join([f"User: {m['query']}\nBot: {m['response']}" for m in messages])
 
     # Formatted Prompt for AI
-    full_query = prompt_template.format(history=conversation_history, averages=averages_info, query=query)
+    full_query = prompt_template.format(history=conversation_history, sensor_data=sensor_data_info, query=query)
 
     # Configure Gemini AI
     api_key = os.getenv("GEMINI_API_KEY")

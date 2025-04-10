@@ -255,35 +255,15 @@ def is_number_verified(number, sns_client):
         print("Error checking verification status:", e)
         return False
 
-def request_verification(number, sns_client):
-    """Request verification for an unverified phone number."""
-    try:
-        response = sns_client.create_sms_sandbox_phone_number(
-            PhoneNumber=number
-        )
-        print("Verification request sent:", response)
-        return True
-    except Exception as e:
-        print("Error requesting verification:", e)
-        return False
-    
 @app.route('/notify', methods=['POST'])
 def notify():
     number = "+" + request.args.get('number')
-    sender = request.args.get('sender', 'AniLytics Alert')
     body = request.json
     message = body.get("message")
     sns_client = get_sns()
 
     if not number:
         return jsonify({"status": "error", "message": "Phone number is required"}), 400
-
-    if not is_number_verified(number=number, sns_client=sns_client):
-        success = request_verification(number=number, sns_client=sns_client)
-        if success:
-            return jsonify({"status": "pending_verification", "message": "Verification code sent. Approve in AWS Console."}), 202
-        else:
-            return jsonify({"status": "error", "message": "Failed to request verification"}), 500
 
     try:
         response = sns_client.publish(
@@ -292,11 +272,11 @@ def notify():
             MessageAttributes={
                 'AWS.SNS.SMS.SenderID': {
                     'DataType': 'String',
-                    'StringValue': sender
+                    'StringValue': 'Anilytics-Alerts'  # Replace with your sender name (max 11 alphanumeric characters)
                 }
             }
         )
-        return jsonify({"status": "success", "data": {"number": number, "message": message, "sender": sender, "message_id": response["MessageId"]}})
+        return jsonify({"status": "success", "data": {"number": number, "message": message, "message_id": response["MessageId"]}})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
     

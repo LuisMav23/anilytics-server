@@ -172,29 +172,58 @@ def chat():
 
     messages = messages[-5:]  # Keep only the last 5 messages for context
 
-    # **Prompt Template**
+    # Fetch average plant data (last 10 records)
+    plant_rows = get_plant_data_from_db(10)
+    if plant_rows:
+        avg_ph = sum(row[1] for row in plant_rows) / len(plant_rows)
+        avg_tds = sum(row[2] for row in plant_rows) / len(plant_rows)
+        avg_temp = sum(row[3] for row in plant_rows) / len(plant_rows)
+        avg_humidity = sum(row[4] for row in plant_rows) / len(plant_rows)
+    else:
+        avg_ph = avg_tds = avg_temp = avg_humidity = None
+
+    # Fetch average fish data (last 10 records)
+    fish_rows = get_fish_data_from_db(10)
+    if fish_rows:
+        avg_turbidity = sum(row[1] for row in fish_rows) / len(fish_rows)
+        avg_water_temp = sum(row[2] for row in fish_rows) / len(fish_rows)
+        avg_fish_ph = sum(row[3] for row in fish_rows) / len(fish_rows)
+    else:
+        avg_turbidity = avg_water_temp = avg_fish_ph = None
+
+    averages_info = "Plant Data Averages: "
+    averages_info += (f"ph: {avg_ph:.2f} | tds: {avg_tds:.2f} | temperature: {avg_temp:.2f} | humidity: {avg_humidity:.2f}\n"
+                      if avg_ph is not None else "No plant data available.\n")
+    averages_info += "Fish Data Averages: "
+    averages_info += (f"turbidity: {avg_turbidity:.2f} | waterTemperature: {avg_water_temp:.2f} | ph: {avg_fish_ph:.2f}"
+                      if avg_turbidity is not None else "No fish data available.")
+
+    # Prompt Template
     prompt_template = """You are an AI chatbot that provides helpful information about how to care for aquaponic systems.
     You will provide information and suggestions to users about their aquaponic systems.
-    
+
     Conversation History:
     {history}
+
+    Sensor Averages:
+    {averages}
 
     User: {query}
     Bot:"""
 
     conversation_history = "\n".join([f"User: {m['query']}\nBot: {m['response']}" for m in messages])
 
-    # **Formatted Prompt for AI**
-    full_query = prompt_template.format(history=conversation_history, query=query)
+    # Formatted Prompt for AI
+    full_query = prompt_template.format(history=conversation_history, averages=averages_info, query=query)
 
-    # **Configure Gemini AI**
+    # Configure Gemini AI
     api_key = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-2.0-flash-lite")
     generation_config = {
-        "max_output_tokens": 100,  # Limit response to 50 tokens
-        "temperature": 0.5,  # Medium randomness
-        "top_p": 0.9,  # High diversity
+        "max_output_tokens": 100,  # Limit response tokens
+        "temperature": 0.5,         # Medium randomness
+        "top_p": 0.9,               # High diversity
     }
 
     response = model.generate_content(full_query, generation_config=generation_config).to_dict()
@@ -205,7 +234,7 @@ def chat():
     except (KeyError, IndexError, TypeError):
         pass
 
-    # **Store the new message in the session**
+    # Store the new message in the session
     messages.append({"query": query, "response": bot_reply})
     table.put_item(Item={"session_id": session_id, "messages": messages})
 

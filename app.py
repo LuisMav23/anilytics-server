@@ -269,26 +269,19 @@ def request_verification(number, sns_client):
 
 @app.route('/notify', methods=['POST'])
 def notify():
-    number = "+" + request.args.get('number')
-    body = request.json
-    message = body.get("message")
-    sns_client = get_sns()
-
-    if not number:
-        return jsonify({"status": "error", "message": "Phone number is required"}), 400
-
-    if not is_number_verified(number = number, sns_client = sns_client):
-        success = request_verification(number = number, sns_client = sns_client)
-        if success:
-            return jsonify({"status": "pending_verification", "message": "Verification code sent. Approve in AWS Console."}), 202
-        else:
-            return jsonify({"status": "error", "message": "Failed to request verification"}), 500
-
     try:
-        response = sns_client.publish(
-            PhoneNumber=number,
-            Message=message
-        )
+        number = "+" + request.args.get('number')
+        body = request.json
+        message = body.get("message")
+        sns_client = get_sns()
+
+        if not number:
+            return jsonify({"status": "error", "message": "Phone number is required"}), 400
+
+            response = sns_client.publish(
+                PhoneNumber=number,
+                Message=message
+            )
         return jsonify({"status": "success", "data": {"number": number, "message": message, "message_id": response["MessageId"]}})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

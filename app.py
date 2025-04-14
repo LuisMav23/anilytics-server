@@ -121,6 +121,7 @@ def get_fish_data():
 @app.route('/fish_data', methods=['POST'])
 def receive_fish_data():
     try:
+        global turbidity_history
         data = request.json
         if (data.get('waterTemperature') is None or 
             data.get('ph') is None or data.get('turbidity') is None):

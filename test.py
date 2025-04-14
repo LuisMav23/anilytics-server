@@ -1,18 +1,35 @@
-import datetime
-import pytz
+import socketio
+
+# Create a Socket.IO client instance
+sio = socketio.Client()
+
+@sio.event
+def connect():
+    print("Connected to the Socket.IO server.")
+
+@sio.event
+def disconnect():
+    print("Disconnected from the Socket.IO server.")
+
+@sio.event
+def message(data):
+    print("Message received:", data)
+
+@sio.event
+def turbidity(data):
+    print("Turbidity event received:", data)
+
+@sio.event
+def change_water(data):
+    print("Change water event received:", data)
 
 def main():
-    # Get current UTC time
-    utc_now = datetime.datetime.now(pytz.utc)
-    print("Current UTC time:", utc_now.strftime("%Y-%m-%d %H:%M:%S %Z%z"))
-
-    # List of timezones to test
-    timezones = ['America/New_York', 'Europe/London', 'Asia/Tokyo', 'Australia/Sydney', 'Asia/Manila']
-
-    for tz_name in timezones:
-        tz = pytz.timezone(tz_name)
-        local_time = utc_now.astimezone(tz)
-        print(f"Local time in {tz_name}: {local_time.strftime('%Y-%m-%d %H:%M:%S %Z%z')}")
+    url = "http://2-18-139-217-2.ap-southeast-1.compute.amazonaws.com"
+    try:
+        sio.connect(url)
+        sio.wait()  # Keep the client running to listen for events
+    except Exception as e:
+        print("Connection error:", e)
 
 if __name__ == "__main__":
     main()

@@ -27,6 +27,9 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_timeout=10, ping_interval=5)
 
+turbidity_history = []
+turbidity_treshold = 250
+
 @app.route('/')
 def home():
     return "Hello, World" \
@@ -136,6 +139,25 @@ def receive_fish_data():
             "created_at": data.get("created_at")
         }
         
+        if len(turbidity_history) == 0:
+            rows = get_fish_data_from_db(50)
+            turbidity_history = [float(row[1]) for row in rows]
+            
+        else:
+            turbidity_history.append(float(data.get("turbidity")))
+            if len(turbidity_history) > 50:
+                turbidity_history = turbidity_history[1:]
+        turbidity_average = sum(turbidity_history)
+
+        if turbidity_average > turbidity_treshold:
+            turbidity_data = {
+                "average": turbidity_average,
+                "history": turbidity_history
+            }
+            socketio.emit('change_water', turbidity_data)
+        else:
+            socketio.emit('turbidity', turbidity_average)
+
         socketio.emit('fish_data', fish_data)
         return jsonify({"status": "success", "data": fish_data}), 200
     except Exception as e:

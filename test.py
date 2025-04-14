@@ -24,7 +24,7 @@ def change_water(data):
     print("Change water event received:", data)
 
 def main():
-    url = "http://2-18-139-217-2.ap-southeast-1.compute.amazonaws.com"
+    url = "http://ec2-18-139-217-2.ap-southeast-1.compute.amazonaws.com"
     try:
         sio.connect(url)
         sio.wait()  # Keep the client running to listen for events

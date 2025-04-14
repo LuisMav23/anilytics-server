@@ -332,5 +332,7 @@ def notify():
         return jsonify({"status": "error", "message": str(e)}), 500
     
 if __name__ == "__main__":
+    turbidity_history = []
+    turbidity_treshold = 250
     server = pywsgi.WSGIServer(("0.0.0.0", 5000), app, handler_class=WebSocketHandler)
     server.serve_forever()

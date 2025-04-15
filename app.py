@@ -30,10 +30,10 @@ socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_tim
 
 # MQTT Configuration
 # You can define these in your .env if needed.
-MQTT_BROKER = os.getenv("MQTT_BROKER", "7170b6ffae904900aeec54b1aeffca2c.s1.eu.hivemq.cloud")
-MQTT_PORT = int(os.getenv("MQTT_PORT", "8883"))
-MQTT_TOPIC_CHANGE_WATER = os.getenv("MQTT_TOPIC_CHANGE_WATER", "aquaponics/change_water")
-MQTT_TOPIC_TURBIDITY = os.getenv("MQTT_TOPIC_TURBIDITY", "aquaponics/turbidity")
+MQTT_BROKER = "7170b6ffae904900aeec54b1aeffca2c.s1.eu.hivemq.cloud"
+MQTT_PORT = 8883
+MQTT_TOPIC_CHANGE_WATER = "aquaponics/change_water"
+MQTT_TOPIC_TURBIDITY = "aquaponics/turbidity"
 
 # Create and connect the MQTT client
 mqtt_client = mqtt.Client("FlaskServer")

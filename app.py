@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
 import psycopg2
@@ -148,7 +148,7 @@ def receive_fish_data():
             turbidity_history.append(float(data.get("turbidity")))
             if len(turbidity_history) > 50:
                 turbidity_history = turbidity_history[1:]
-        turbidity_average = sum(turbidity_history)
+        turbidity_average = sum(turbidity_history) / len(turbidity_average)
 
         if turbidity_average > turbidity_treshold:
             turbidity_data = {
@@ -167,6 +167,7 @@ def receive_fish_data():
 @socketio.on('connect')
 def handle_connect():
     print("A client connected")
+    emit('message', {'data': 'connected successfully'})
 
 @socketio.on('disconnect')
 def handle_disconnect():

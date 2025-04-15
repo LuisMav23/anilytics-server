@@ -182,10 +182,11 @@ def receive_fish_data():
 # MQTT TRIGGER EVENTS
 # ------------------------
 
-@app.route('/growlight', methods=['POST'])
+@app.route('/growlights', methods=['POST'])
 def trigger_growlights():
     current_time = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
     mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time}] Growlights Triggered')
+    return jsonify({"status": "success", "message": "Growlights triggered"}), 200
 
 # ------------------------
 # SOCKETIO EVENTS

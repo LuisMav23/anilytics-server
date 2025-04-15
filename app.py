@@ -32,6 +32,8 @@ socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_tim
 MQTT_TOPIC_CHANGE_WATER = "aquaponics/change_water"
 MQTT_TOPIC_TURBIDITY = "aquaponics/turbidity"
 MQTT_TOPIC_GROWLIGHT = "aquaponics/growlight"
+MQTT_TOPIC_FEEDER = "aquaponics/feeder"
+
 
 # Create and connect the MQTT client
 mqtt_client = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5, callback_api_version=paho.CallbackAPIVersion.VERSION2)
@@ -187,6 +189,12 @@ def trigger_growlights():
     current_time = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
     mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time}] Growlights Triggered')
     return jsonify({"status": "success", "message": "Growlights triggered"}), 200
+
+@app.route('/feeder', methods=['POST'])
+def trigger_feeder():
+    current_time = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
+    mqtt_client.publish(MQTT_TOPIC_FEEDER, f'[{current_time}] Feeder Triggered')
+    return jsonify({"status": "success", "message": "Feeder triggered"}), 200
 
 # ------------------------
 # SOCKETIO EVENTS

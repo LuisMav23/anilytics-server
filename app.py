@@ -167,12 +167,12 @@ def receive_fish_data():
 
         # Send MQTT message based on turbidity threshold
         if turbidity_average > turbidity_treshold:
-            mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, str(turbidity_average), qos=1)
+            mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, str(turbidity_average))
             # Optionally, still emit via socketio for WebSocket clients
             socketio.emit('change_water', turbidity_average)
         else:
             # Publish MQTT message on the turbidity topic
-            mqtt_client.publish(MQTT_TOPIC_TURBIDITY, str(turbidity_average), qos=1)
+            mqtt_client.publish(MQTT_TOPIC_TURBIDITY, str(turbidity_average))
             socketio.emit('turbidity', turbidity_average)
 
         socketio.emit('fish_data', fish_data)

@@ -31,6 +31,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_tim
 
 MQTT_TOPIC_CHANGE_WATER = "aquaponics/change_water"
 MQTT_TOPIC_TURBIDITY = "aquaponics/turbidity"
+MQTT_TOPIC_GROWLIGHT = "aquaponics/growlight"
 
 # Create and connect the MQTT client
 mqtt_client = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5, callback_api_version=paho.CallbackAPIVersion.VERSION2)
@@ -170,15 +171,21 @@ def receive_fish_data():
             mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, str(turbidity_average), qos=0)
             # Optionally, still emit via socketio for WebSocket clients
             socketio.emit('change_water', turbidity_average)
-        else:
-            # Publish MQTT message on the turbidity topic
-            mqtt_client.publish(MQTT_TOPIC_TURBIDITY, str(turbidity_average), qos=0)
-            socketio.emit('turbidity', turbidity_average)
 
         socketio.emit('fish_data', fish_data)
         return jsonify({"status": "success", "data": fish_data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# ------------------------
+# MQTT TRIGGER EVENTS
+# ------------------------
+
+@app.route('/growlight', methods=['POST'])
+def trigger_growlights():
+    current_time = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
+    mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time}] Growlights Triggered')
 
 # ------------------------
 # SOCKETIO EVENTS

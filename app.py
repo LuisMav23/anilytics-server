@@ -20,7 +20,8 @@ from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
 # Import the Paho MQTT client
-import paho.mqtt.client as mqtt
+import paho.mqtt.client as paho
+from paho import mqtt
 
 load_dotenv()
 
@@ -28,16 +29,14 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_timeout=10, ping_interval=5)
 
-# MQTT Configuration
-# You can define these in your .env if needed.
-MQTT_BROKER = "7170b6ffae904900aeec54b1aeffca2c.s1.eu.hivemq.cloud"
-MQTT_PORT = 8883
 MQTT_TOPIC_CHANGE_WATER = "aquaponics/change_water"
 MQTT_TOPIC_TURBIDITY = "aquaponics/turbidity"
 
 # Create and connect the MQTT client
-mqtt_client = mqtt.Client()
-mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+mqtt_client = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5, callback_api_version=paho.CallbackAPIVersion.VERSION2)
+mqtt_client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLS)
+mqtt_client.username_pw_set("hivemq.webclient.1744715705461", "6a45&NDq.1TJ!Cpd:syI")
+mqtt_client.connect("7170b6ffae904900aeec54b1aeffca2c.s1.eu.hivemq.cloud", 8883)
 mqtt_client.loop_start()
 
 turbidity_history = []
@@ -174,12 +173,12 @@ def receive_fish_data():
             }
             # Publish MQTT message on the change_water topic
             mqtt_payload = json.dumps(turbidity_data)
-            mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, mqtt_payload)
+            mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, mqtt_payload, qos=1)
             # Optionally, still emit via socketio for WebSocket clients
             socketio.emit('change_water', turbidity_data)
         else:
             # Publish MQTT message on the turbidity topic
-            mqtt_client.publish(MQTT_TOPIC_TURBIDITY, str(turbidity_average))
+            mqtt_client.publish(MQTT_TOPIC_TURBIDITY, str(turbidity_average), qos=1)
             socketio.emit('turbidity', turbidity_average)
 
         socketio.emit('fish_data', fish_data)

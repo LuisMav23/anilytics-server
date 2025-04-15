@@ -4,6 +4,7 @@ from flask_cors import CORS
 
 import psycopg2
 from uuid import uuid4
+import json  # For serializing payloads for MQTT
 
 from src.config import get_dynamodb, get_sns
 from src.services.database import get_plant_data_from_db, get_fish_data_from_db, insert_plant_data_into_db, insert_fish_data_into_db
@@ -13,13 +14,13 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 from datetime import datetime
-        
+import pytz
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-import pytz
 
-
+# Import the Paho MQTT client
+import paho.mqtt.client as mqtt
 
 load_dotenv()
 
@@ -27,18 +28,31 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", allow_upgrades=True, ping_timeout=10, ping_interval=5)
 
+# MQTT Configuration
+# You can define these in your .env if needed.
+MQTT_BROKER = os.getenv("MQTT_BROKER", "7170b6ffae904900aeec54b1aeffca2c.s1.eu.hivemq.cloud")
+MQTT_PORT = int(os.getenv("MQTT_PORT", "8883"))
+MQTT_TOPIC_CHANGE_WATER = os.getenv("MQTT_TOPIC_CHANGE_WATER", "aquaponics/change_water")
+MQTT_TOPIC_TURBIDITY = os.getenv("MQTT_TOPIC_TURBIDITY", "aquaponics/turbidity")
+
+# Create and connect the MQTT client
+mqtt_client = mqtt.Client("FlaskServer")
+mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+mqtt_client.loop_start()
+
 turbidity_history = []
-turbidity_treshold = 250
+turbidity_treshold = 250  # The threshold value for turbidity alerts
 
 @app.route('/')
 def home():
-    return "Hello, World" \
-    "" \
-    "!"
+    return "Hello, World!"
 
-# PLANT DATA ENDPOINTS
+# Set timezone for PH
 ph_tz = pytz.timezone("Asia/Manila")
 
+# ------------------------
+# PLANT DATA ENDPOINTS
+# ------------------------
 @app.route('/plant_data', methods=['GET'])
 def get_plant_data():
     try:
@@ -94,7 +108,9 @@ def receive_plant_data():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# ------------------------
 # FISH DATA ENDPOINTS
+# ------------------------
 @app.route('/fish_data', methods=['GET'])
 def get_fish_data():
     try:
@@ -140,23 +156,30 @@ def receive_fish_data():
             "created_at": data.get("created_at")
         }
         
+        # Update turbidity history (capped at 50 records)
         if len(turbidity_history) == 0:
             rows = get_fish_data_from_db(50)
             turbidity_history = [float(row[1]) for row in rows]
-            
         else:
             turbidity_history.append(float(data.get("turbidity")))
             if len(turbidity_history) > 50:
                 turbidity_history = turbidity_history[1:]
         turbidity_average = sum(turbidity_history) / len(turbidity_history)
 
+        # Send MQTT message based on turbidity threshold
         if turbidity_average > turbidity_treshold:
             turbidity_data = {
                 "average": turbidity_average,
                 "history": turbidity_history
             }
+            # Publish MQTT message on the change_water topic
+            mqtt_payload = json.dumps(turbidity_data)
+            mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, mqtt_payload)
+            # Optionally, still emit via socketio for WebSocket clients
             socketio.emit('change_water', turbidity_data)
         else:
+            # Publish MQTT message on the turbidity topic
+            mqtt_client.publish(MQTT_TOPIC_TURBIDITY, str(turbidity_average))
             socketio.emit('turbidity', turbidity_average)
 
         socketio.emit('fish_data', fish_data)
@@ -164,6 +187,9 @@ def receive_fish_data():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# ------------------------
+# SOCKETIO EVENTS
+# ------------------------
 @socketio.on('connect')
 def handle_connect():
     print("A client connected")
@@ -173,8 +199,9 @@ def handle_connect():
 def handle_disconnect():
     print("A client disconnected")
 
-
+# ------------------------
 # GEMINI AI CONVERSATION API
+# ------------------------
 @app.route('/chat', methods=['POST'])
 def chat():
     query = request.json.get('query')
@@ -216,7 +243,7 @@ def chat():
 
     sensor_data_info = "Plant Data:\n" + plant_data_info + "\n\nFish Data:\n" + fish_data_info
 
-    # Prompt Template
+    # Prompt Template for Gemini AI
     prompt_template = """You are an AI chatbot that provides helpful information about how to care for aquaponic systems.
 You will provide information and suggestions to users about their aquaponic systems. Answer in a simple way and if the user is asking for
 instructions, answer it in a clear and step by step manner. Make it as descriptive but as simple as possible.
@@ -231,8 +258,6 @@ User: {query}
 Bot:"""
 
     conversation_history = "\n".join([f"User: {m['query']}\nBot: {m['response']}" for m in messages])
-
-    # Formatted Prompt for AI
     full_query = prompt_template.format(history=conversation_history, sensor_data=sensor_data_info, query=query)
 
     # Configure Gemini AI
@@ -240,8 +265,8 @@ Bot:"""
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-2.0-flash-lite")
     generation_config = {
-        "temperature": 0.5,         # Medium randomness
-        "top_p": 0.9,               # High diversity
+        "temperature": 0.5,
+        "top_p": 0.9,
     }
 
     response = model.generate_content(full_query, generation_config=generation_config).to_dict()
@@ -252,41 +277,35 @@ Bot:"""
     except (KeyError, IndexError, TypeError):
         pass
 
-    # Store the new message in the session
     messages.append({"query": query, "response": bot_reply})
     table.put_item(Item={"session_id": session_id, "messages": messages})
 
     return jsonify({"status": "success", "session_id": session_id, "response": bot_reply})
 
-
 @app.route('/chat', methods=['GET'])
 def get_chat_by_session_id():
     session_id = request.args.get('session_id')
-
     if session_id is None:
         return jsonify({"status": "error", "message": "Invalid session_id"})
-
     dynamodb = get_dynamodb()
     table = dynamodb.Table(os.getenv("DYNAMODB_TABLE"))
     current_session = table.get_item(Key={"session_id": session_id})
     messages = current_session.get("Item", {}).get("messages", [])
-
     return jsonify({"status": "success", "session_id": session_id, "messages": messages})
 
 @app.route('/chat', methods=['DELETE'])
 def delete_chat_by_session_id():
     session_id = request.args.get('session_id')
-
     if session_id is None:
         return jsonify({"status": "error", "message": "Invalid session_id"})
-
     dynamodb = get_dynamodb()
     table = dynamodb.Table(os.getenv("DYNAMODB_TABLE"))
     table.delete_item(Key={"session_id": session_id})
-
     return jsonify({"status": "success", "message": "Session deleted"})
 
+# ------------------------
 # NOTIFICATION API
+# ------------------------
 def is_number_verified(number, sns_client):
     """Check if the phone number is already verified in SNS Sandbox."""
     print(number)
@@ -305,9 +324,7 @@ def is_number_verified(number, sns_client):
 def request_verification(number, sns_client):
     """Request verification for an unverified phone number."""
     try:
-        response = sns_client.create_sms_sandbox_phone_number(
-            PhoneNumber=number
-        )
+        response = sns_client.create_sms_sandbox_phone_number(PhoneNumber=number)
         print("Verification request sent:", response)
         return True
     except Exception as e:
@@ -332,8 +349,9 @@ def notify():
         return jsonify({"status": "success", "data": {"number": number, "message": message, "message_id": response["MessageId"]}})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-    
+
 if __name__ == "__main__":
+    # Reset turbidity history and threshold values if needed
     turbidity_history = []
     turbidity_treshold = 250
     server = pywsgi.WSGIServer(("0.0.0.0", 5000), app, handler_class=WebSocketHandler)

@@ -1,35 +1,25 @@
-import socketio
+import paho.mqtt.client as mqtt
 
-# Create a Socket.IO client instance
-sio = socketio.Client()
+# Callback when the client connects to the broker
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    # Subscribe to the desired topics
+    client.subscribe("aquaponics/change_water")
+    client.subscribe("aquaponics/turbidity")
 
-@sio.event
-def connect():
-    print("Connected to the Socket.IO server.")
+# Callback when a message is received from the broker
+def on_message(client, userdata, msg):
+    print(f"Received message on topic '{msg.topic}': {msg.payload.decode()}")
 
-@sio.event
-def disconnect():
-    print("Disconnected from the Socket.IO server.")
+# Create an MQTT client instance
+client = mqtt.Client()
 
-@sio.event
-def message(data):
-    print("Message received:", data)
+# Assign the callback functions
+client.on_connect = on_connect
+client.on_message = on_message
 
-@sio.event
-def turbidity(data):
-    print("Turbidity event received:", data)
+# Connect to the MQTT broker
+client.connect("7170b6ffae904900aeec54b1aeffca2c.s1.eu.hivemq.cloud", 8883, 60)
 
-@sio.event
-def change_water(data):
-    print("Change water event received:", data)
-
-def main():
-    url = "http://ec2-18-139-217-2.ap-southeast-1.compute.amazonaws.com"
-    try:
-        sio.connect(url)
-        sio.wait()  # Keep the client running to listen for events
-    except Exception as e:
-        print("Connection error:", e)
-
-if __name__ == "__main__":
-    main()
+# Start the network loop, this call is blocking and runs forever
+client.loop_forever()

@@ -36,7 +36,7 @@ MQTT_TOPIC_CHANGE_WATER = "aquaponics/change_water"
 MQTT_TOPIC_TURBIDITY = "aquaponics/turbidity"
 
 # Create and connect the MQTT client
-mqtt_client = mqtt.Client("FlaskServer")
+mqtt_client = mqtt.Client()
 mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
 mqtt_client.loop_start()
 

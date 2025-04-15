@@ -148,7 +148,7 @@ def receive_fish_data():
             turbidity_history.append(float(data.get("turbidity")))
             if len(turbidity_history) > 50:
                 turbidity_history = turbidity_history[1:]
-        turbidity_average = sum(turbidity_history) / len(turbidity_average)
+        turbidity_average = sum(turbidity_history) / len(turbidity_history)
 
         if turbidity_average > turbidity_treshold:
             turbidity_data = {

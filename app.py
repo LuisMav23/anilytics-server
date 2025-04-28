@@ -176,11 +176,11 @@ def receive_fish_data():
         # Get 'ldr_value' from the request and trigger growlight if brightness is below acceptable threshold
         ldr_value = data.get("ldr_value")
         isGrowlightTriggered = data.get("isGrowlightTriggered")
-        if ldr_value is not None and isGrowlightTriggered is not None and isGrowlightTriggered == "false": 
+        if ldr_value is not None and isGrowlightTriggered is not None: 
             try:
                 ldr_value = float(ldr_value)
                 acceptable_brightness_threshold = 300  # Define as needed
-                if ldr_value < acceptable_brightness_threshold:
+                if ldr_value < acceptable_brightness_threshold and isGrowlightTriggered == 0:
                     current_time_str = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
                     mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time_str}] Growlights Triggered due to low brightness: {ldr_value}')
                     socketio.emit('growlights', {"ldr_value": ldr_value, "triggered": True})

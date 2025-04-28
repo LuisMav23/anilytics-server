@@ -171,8 +171,21 @@ def receive_fish_data():
         # Send MQTT message based on turbidity threshold
         if turbidity_average > turbidity_treshold:
             mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, str(turbidity_average), qos=0)
-            # Optionally, still emit via socketio for WebSocket clients
             socketio.emit('change_water', turbidity_average)
+        
+        # Get 'ldr_value' from the request and trigger growlight if brightness is below acceptable threshold
+        ldr_value = data.get("ldr_value")
+        isGrowlightTriggered = data.get("isGrowlightTriggered")
+        if ldr_value is not None and isGrowlightTriggered is not None and isGrowlightTriggered == "false": 
+            try:
+                ldr_value = float(ldr_value)
+                acceptable_brightness_threshold = 300  # Define as needed
+                if ldr_value < acceptable_brightness_threshold:
+                    current_time_str = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
+                    mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time_str}] Growlights Triggered due to low brightness: {ldr_value}')
+                    socketio.emit('growlights', {"ldr_value": ldr_value, "triggered": True})
+            except ValueError:
+                pass
 
         socketio.emit('fish_data', fish_data)
         return jsonify({"status": "success", "data": fish_data}), 200

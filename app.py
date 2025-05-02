@@ -212,6 +212,12 @@ def trigger_feeder():
     mqtt_client.publish(MQTT_TOPIC_FEEDER, f'[{current_time}] Feeder Triggered')
     return jsonify({"status": "success", "message": "Feeder triggered"}), 200
 
+@app.route('/change_water', methods=['POST'])
+def trigger_change_water():
+    current_time = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
+    mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, f'[{current_time}] Change Water Triggered')
+    return jsonify({"status": "success", "message": "Change water triggered"}), 200
+
 # ------------------------
 # SOCKETIO EVENTS
 # ------------------------

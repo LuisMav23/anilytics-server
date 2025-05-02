@@ -142,6 +142,7 @@ def get_fish_data():
 def receive_fish_data():
     try:
         global turbidity_history
+        global ldr_value_prev
         data = request.json
         if (data.get('waterTemperature') is None or 
             data.get('ph') is None or data.get('turbidity') is None):

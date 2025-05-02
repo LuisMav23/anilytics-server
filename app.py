@@ -387,6 +387,7 @@ def notify():
 
 if __name__ == "__main__":
     # Reset turbidity history and threshold values if needed
+    ldr_value_prev = 0
     turbidity_history = []
     turbidity_treshold = 250
     server = pywsgi.WSGIServer(("0.0.0.0", 5000), app, handler_class=WebSocketHandler)

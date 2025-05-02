@@ -33,6 +33,7 @@ MQTT_TOPIC_CHANGE_WATER = "aquaponics/change_water"
 MQTT_TOPIC_TURBIDITY = "aquaponics/turbidity"
 MQTT_TOPIC_GROWLIGHT = "aquaponics/growlight"
 MQTT_TOPIC_FEEDER = "aquaponics/feeder"
+MQTT_TOPIC_STOP_WATER = "aquaponics/stop_water"
 
 ldr_value_prev = 0
 
@@ -222,6 +223,12 @@ def trigger_change_water():
     current_time = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
     mqtt_client.publish(MQTT_TOPIC_CHANGE_WATER, f'[{current_time}] Change Water Triggered')
     return jsonify({"status": "success", "message": "Change water triggered"}), 200
+
+    @app.route('/stop_water', methods=['POST'])
+    def trigger_stop_water():
+        current_time = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
+        mqtt_client.publish(MQTT_TOPIC_STOP_WATER, f'[{current_time}] Stop Water Triggered')
+        return jsonify({"status": "success", "message": "Stop water triggered"}), 200
 
 # ------------------------
 # SOCKETIO EVENTS

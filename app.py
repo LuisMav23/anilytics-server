@@ -34,6 +34,8 @@ MQTT_TOPIC_TURBIDITY = "aquaponics/turbidity"
 MQTT_TOPIC_GROWLIGHT = "aquaponics/growlight"
 MQTT_TOPIC_FEEDER = "aquaponics/feeder"
 
+ldr_value_prev = 0
+
 
 # Create and connect the MQTT client
 mqtt_client = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5, callback_api_version=paho.CallbackAPIVersion.VERSION2)
@@ -176,19 +178,21 @@ def receive_fish_data():
         # Get 'ldr_value' from the request and trigger growlight if brightness is below acceptable threshold
         ldr_value = data.get("ldr_value")
         isGrowlightTriggered = data.get("isGrowlightTriggered")
-        if ldr_value is not None and isGrowlightTriggered is not None: 
-            try:
-                ldr_value = float(ldr_value)
-                if ldr_value == 0 and isGrowlightTriggered == 0:
-                    current_time_str = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
-                    mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time_str}] Growlights Triggered due to low brightness: {ldr_value}')
-                    socketio.emit('growlights', {"ldr_value": ldr_value, "triggered": True})
-                elif ldr_value == 1 and isGrowlightTriggered == 1:
-                    current_time_str = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
-                    mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time_str}] Growlights Triggered due to low brightness: {ldr_value}')
-                    socketio.emit('growlights', {"ldr_value": ldr_value, "triggered": True})
-            except ValueError:
-                pass
+        if ldr_value_prev != ldr_value:
+            if ldr_value is not None and isGrowlightTriggered is not None: 
+                try:
+                    ldr_value = float(ldr_value)
+                    if ldr_value == 0 and isGrowlightTriggered == 0:
+                        current_time_str = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
+                        mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time_str}] Growlights Triggered due to low brightness: {ldr_value}')
+                        socketio.emit('growlights', {"ldr_value": ldr_value, "triggered": True})
+                    elif ldr_value == 1 and isGrowlightTriggered == 1:
+                        current_time_str = datetime.now(ph_tz).strftime("%Y-%m-%d %H:%M:%S")
+                        mqtt_client.publish(MQTT_TOPIC_GROWLIGHT, f'[{current_time_str}] Growlights Triggered due to low brightness: {ldr_value}')
+                        socketio.emit('growlights', {"ldr_value": ldr_value, "triggered": True})
+                except ValueError:
+                    pass
+            ldr_value_prev = ldr_value
 
         socketio.emit('fish_data', fish_data)
         return jsonify({"status": "success", "data": fish_data}), 200

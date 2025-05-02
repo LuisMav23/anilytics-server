@@ -176,8 +176,8 @@ def receive_fish_data():
             socketio.emit('change_water', turbidity_average)
         
         # Get 'ldr_value' from the request and trigger growlight if brightness is below acceptable threshold
-        ldr_value = data.get("ldr_value")
-        isGrowlightTriggered = data.get("isGrowlightTriggered")
+        ldr_value = int(data.get("ldr_value"))
+        isGrowlightTriggered = int(data.get("isGrowlightTriggered"))
         if ldr_value_prev != ldr_value:
             if ldr_value is not None and isGrowlightTriggered is not None: 
                 try:

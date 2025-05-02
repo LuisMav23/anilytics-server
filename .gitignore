@@ -3,3 +3,4 @@ anilytics-server-kp.pem
 .env/
 .env
 test.py
+__pycache__/
